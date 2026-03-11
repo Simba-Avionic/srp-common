@@ -1,0 +1,5 @@
+filegroup(
+    name = "data_files",
+    srcs = glob(["*.csv"]),
+    visibility = ["//visibility:public"],
+)

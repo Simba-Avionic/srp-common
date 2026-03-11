@@ -1,0 +1,19 @@
+load("@rules_cc//cc:defs.bzl", "cc_library")
+
+cc_library(
+    name = "apogee_lib",
+    srcs = [
+        "KalmanFilter.cpp",
+        "KalmanFilterR7.cpp",
+    ],
+    hdrs = [
+        "KalmanFilter.h",
+        "KalmanFilterR7.h",
+        "ApogeeDetector.h",
+    ],
+    deps = [
+        "@eigen//:eigen",
+        "//csvReader:csvReader",
+    ],
+    visibility = ["//visibility:public"],
+)
