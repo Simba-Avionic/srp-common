@@ -65,14 +65,21 @@ std::vector<double> readColumnCSV(const std::string &path, size_t colIndex)
 
 int main(int argc, char *argv[])
 {
-    if (argc != 3)
+    if (argc != 3&& argc!=1)
     {
-        std::cerr << "Usage: " << argv[0] << " <barometer_path.csv> <accelerometer_path.csv>\n";
+        std::cerr << "Usage: " << argv[0];
         return 1;
     }
-
-    std::string barometerPath = argv[1];
-    std::string accelerometerPath = argv[2];
+    std::string barometerPath;
+    std::string accelerometerPath;
+    if(argc==3){
+        barometerPath = argv[1];
+        accelerometerPath = argv[2];
+    }
+    if(argc==1){
+        barometerPath = "data/barometer.csv";
+        accelerometerPath = "data/accelerometer.csv";
+    }
     KalmanFilterR7 kf(0.1);
     RealTimeApogee apogee;
 
