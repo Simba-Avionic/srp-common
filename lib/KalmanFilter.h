@@ -1,9 +1,8 @@
-#include <Eigen/Dense>
+#include "Matrix.h"
 
 class KalmanFilter {
 public:
-    using Matrix = Eigen::MatrixXd;
-    using Vector = Eigen::VectorXd;
+    using Vector = Matrix;
 
     KalmanFilter(const Matrix& F, const Matrix& B, const Matrix& H,
                  const Matrix& Q, const Matrix& R, const Matrix& P,

@@ -15,13 +15,13 @@ void KalmanFilter::update(const Vector &z)
 {
     Vector y = z - H * x;
     Matrix S = H * P * H.transpose() + R;
-    Matrix K = P * H.transpose() * S.inverse();
+    Matrix K = P * H.transpose() * S.inverse1x1();
     x = x + K * y;
-    Matrix I = Matrix::Identity(P.rows(), P.cols());
+    Matrix I = Matrix::Identity(P.getRows());
     P = (I - K * H) * P;
 }
 
-Eigen::VectorXd KalmanFilter::getState() const
+Matrix KalmanFilter::getState() const
 {
     return x;
 }

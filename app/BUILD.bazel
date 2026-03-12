@@ -13,3 +13,10 @@ cc_binary(
     deps = ["//lib:apogee_lib"],
     data = ["//data:data_files"],
 )
+cc_binary(
+    name = "testy",
+    srcs = ["testy.cpp"],
+    data = [
+        ":csv_apogee_test",  
+    ],
+)
