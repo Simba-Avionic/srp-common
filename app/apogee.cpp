@@ -1,6 +1,6 @@
 #include <iostream>
 #include <fstream>
-#include <Eigen/Dense>
+#include "lib/Matrix.h"
 #include "lib/KalmanFilterR7.h"
 #include "lib/ApogeeDetector.h"
 
@@ -101,9 +101,9 @@ int main(int argc, char *argv[])
         double accel = accelData[i];
         double pressure = pressureData[i];
 
-        Eigen::Vector2d state = kf.processMeasurement(accel, pressure);
-        double height = state(0);
-        double velocity = state(1);
+        Matrix state = kf.processMeasurement(accel, pressure);
+        double height = state(0,0);
+        double velocity = state(1,0);
 
         apogee.update(height, velocity);
 
