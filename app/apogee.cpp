@@ -40,7 +40,7 @@ std::vector<double> readColumnCSV(const std::string& path, size_t colIndex) {
 
 int main() {
     KalmanFilterR7 kf(0.1);
-    RealTimeApogee apogee;
+    RealTimeApogee apogee(15, -0.5, 0.0);
 
     const double dt = 0.1;
 

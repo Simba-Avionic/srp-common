@@ -8,19 +8,26 @@
 
 class RealTimeApogee {
 public:
-    // Добавим minHeight или minTime, чтобы не сработать на стартовом столе
-    RealTimeApogee(size_t bufferSize = 15, double speedThreshold = -0.5)
-        : bufferSize(bufferSize), speedThreshold(speedThreshold),
-          maxHeight(-1e9), detectedApogee(0), apogeeReached(false),
-          isLaunched(false) {}
+    // bufferSize - liczba ostatnich pomiarów używanych do obliczenia średniej prędkości pionowej
+    // speedThreshold - próg prędkości pionowej (ujemna liczba!!); apogeum uznajemy za osiągnięte, gdy średnia prędkość spadnie poniżej tego progu
+    // startHeight - wysokość startowa (domyślnie 0)
+    RealTimeApogee(size_t bufferSize = 15, double speedThreshold = -0.5, double startHeight = 0)
+        : bufferSize(bufferSize), speedThreshold(speedThreshold), maxHeight(-1e9), startHeight(startHeight), detectedApogee(0), apogeeReached(false), isLaunched(false) {}
+    
+    double averageSpeed() const {
+        double sum = 0;
+        for(double v : speedBuffer) sum += v;
+        return sum / speedBuffer.size();
+    }
 
+    // funkcja do aktualizacji stanu
     void update(double height, double velocity) {
-        // 1. Детекция старта (чтобы не сработать, пока ракета просто стоит)
+        height = height - startHeight;
         if (!isLaunched && velocity > 5.0) { 
             isLaunched = true;
         }
 
-        if (!isLaunched) return; // Выходим, если еще не взлетели
+        if (!isLaunched) return;
 
         heightBuffer.push_back(height);
         speedBuffer.push_back(velocity);
@@ -30,22 +37,12 @@ public:
             speedBuffer.erase(speedBuffer.begin());
         }
 
-        // Обновляем максимальную высоту
         if (height > maxHeight) {
             maxHeight = height;
         }
-
-        // 2. Условие апогея: мы взлетели И скорость стала ниже порога
-        // Лучше использовать среднее по буферу, чтобы не сработать на одном "шумном" замере
-        if (!apogeeReached && heightBuffer.size() >= bufferSize) {
-            double avgV = 0;
-            for(double v : speedBuffer) avgV += v;
-            avgV /= speedBuffer.size();
-
-            if (avgV <= speedThreshold) {
-                apogeeReached = true;
-                detectedApogee = maxHeight;
-            }
+        if (!apogeeReached && heightBuffer.size() >= bufferSize && averageSpeed() <= speedThreshold) {
+            apogeeReached = true;
+            detectedApogee = maxHeight;
         }
     }
     bool isApogeeReached() const { return apogeeReached; }
@@ -57,6 +54,7 @@ private:
     std::vector<double> heightBuffer;
     std::vector<double> speedBuffer;
     double maxHeight;
+    double startHeight;
     double detectedApogee;
     bool apogeeReached;
     bool isLaunched;
