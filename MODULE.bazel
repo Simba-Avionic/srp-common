@@ -1,0 +1,7 @@
+module(
+    name = "bazel_apogeum",
+    version = "0.1.0",
+)
+bazel_dep(name = "eigen", version = "4.0.0-20241125.bcr.2")
+bazel_dep(name = "rules_cc", version = "0.0.17")
+
