@@ -32,3 +32,5 @@
 *.app
 /bazel-*
 .DS_Store
+MODULE.bazel.lock
+MODULE.bazel
