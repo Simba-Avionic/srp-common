@@ -5,41 +5,26 @@
 #include <vector>
 #include <cmath> 
 #include <filesystem> 
-#include "tools/cpp/runfiles/runfiles.h" // <--- DODANY INCLUDE
+#include "tools/cpp/runfiles/runfiles.h"
 
 #include "lib/Matrix.h"
 #include "lib/KalmanFilterR7.h"
 #include "lib/ApogeeDetector.h"
 #include "lib/DataLoader.h"
 
-using bazel::tools::cpp::runfiles::Runfiles; // <--- DODANA PRZESTRZEŃ NAZW
+using bazel::tools::cpp::runfiles::Runfiles;
 namespace fs = std::filesystem; 
 
 namespace {
     static constexpr auto apoogeeError=0.15;
 }
 
-// Funkcja pomocnicza do pobierania bezpiecznej ścieżki
-fs::path GetRunfilesPath(Runfiles* runfiles, const std::string& relative_path) {
-    // Bzlmod domyślnie nazywa główne repozytorium "_main" lub tak jak w MODULE.bazel ("bazel_apogeum")
-    std::string runfiles_path = "bazel_apogeum/" + relative_path; 
-    fs::path resolved_path = runfiles->Rlocation(runfiles_path);
-
-    // Fallback dla nowszych wersji Bazela, które mogą używać nazwy "_main"
-    if (!fs::exists(resolved_path)) {
-        runfiles_path = "_main/" + relative_path;
-        resolved_path = runfiles->Rlocation(runfiles_path);
-    }
-    return resolved_path;
-}
-
 TEST(detect_test, test_apogee_detecotr) {
-    // Inicjalizacja Runfiles
     std::string error;
     std::unique_ptr<Runfiles> runfiles(Runfiles::CreateForTest(&error));
     ASSERT_NE(runfiles, nullptr) << "Nie udalo sie zainicjowac runfiles: " << error;
 
-    fs::path base_path = GetRunfilesPath(runfiles.get(), "data/10hz_1000m"); 
+    fs::path base_path = runfiles->Rlocation("moje_wielkie_dane/data/10hz_1000m"); 
     
     fs::path barometerPath = base_path / "exported_barometer_data.csv";
     fs::path accelerometerPath = base_path / "exported_accel_data.csv";
@@ -73,16 +58,24 @@ TEST(detect_test, test_apogee_detecotr) {
 class ApogeeFlightDataTest : public ::testing::TestWithParam<std::string>{};
 
 TEST_P(ApogeeFlightDataTest, CalculatesApogeeCorrectly){
-    // Inicjalizacja Runfiles
     std::string error;
     std::unique_ptr<Runfiles> runfiles(Runfiles::CreateForTest(&error));
     ASSERT_NE(runfiles, nullptr) << "Nie udalo sie zainicjowac runfiles: " << error;
 
-    fs::path base_path = GetRunfilesPath(runfiles.get(), GetParam());
+    std::string param = GetParam();
+    if (param.find("data/") == std::string::npos) {
+        param = "data/" + param;
+    }
+    std::string path_in_zip = "moje_wielkie_dane/" + param;
+    fs::path base_path = runfiles->Rlocation(path_in_zip);
 
     fs::path barometerPath = base_path / "exported_barometer_data.csv";
     fs::path accelerometerPath = base_path / "exported_accel_data.csv";
     fs::path configPath = base_path / "config.txt";
+
+    ASSERT_TRUE(fs::exists(configPath)) << "BRAK PLIKU: " << configPath;
+    ASSERT_TRUE(fs::exists(barometerPath)) << "BRAK PLIKU: " << barometerPath;
+    ASSERT_TRUE(fs::exists(accelerometerPath)) << "BRAK PLIKU: " << accelerometerPath;
 
     checkAndGenerateConfig(configPath);
     ConfigData config = readConfig(configPath);
@@ -94,6 +87,8 @@ TEST_P(ApogeeFlightDataTest, CalculatesApogeeCorrectly){
     std::vector<double> accelData = readColumnCSV(accelerometerPath, 3);
     size_t dataSize = accelData.size();
     
+    ASSERT_GT(dataSize, 0) << "Wczytano 0 wierszy z pliku CSV!";
+
     double height = 0.0; 
     for (size_t i = 0; i < dataSize; ++i) {
         double accel = accelData[i];
@@ -106,27 +101,26 @@ TEST_P(ApogeeFlightDataTest, CalculatesApogeeCorrectly){
             break;
         }
     }
-    EXPECT_NEAR(config.max_height_clean, height, config.max_height_clean*apoogeeError); 
+    EXPECT_NEAR(config.max_height_clean, height, config.max_height_clean * apoogeeError); 
 }
-
 INSTANTIATE_TEST_SUITE_P(
     FlightDataSimulation, 
     ApogeeFlightDataTest, 
     ::testing::Values(
-        "data/10hz_1000m",
-        "data/10hz_2000m",
-        "data/10hz_4000m",
-        "data/10hz_5000m",
-        "data/10hz_6000m",
-        "data/100hz_1000m",
-        "data/100hz_2000m",
-        "data/100hz_3000m",
-        "data/100hz_4000m",
-        "data/100hz_5000m",
-        "data/100hz_6000m",
-        "data/1000hz_1000m",
-        "data/1000hz_2000m",
-        "data/1000hz_5000m",
-        "data/1000hz_6000m"
+        "10hz_1000m",
+        "10hz_2000m",
+        "10hz_4000m",
+        "10hz_5000m",
+        "10hz_6000m",
+        "100hz_1000m",
+        "100hz_2000m",
+        "100hz_3000m",
+        "100hz_4000m",
+        "100hz_5000m",
+        "100hz_6000m",
+        "1000hz_1000m",
+        "1000hz_2000m",
+        "1000hz_5000m",
+        "1000hz_6000m"
     )
 );
