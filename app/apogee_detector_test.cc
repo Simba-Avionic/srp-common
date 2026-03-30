@@ -5,22 +5,46 @@
 #include <vector>
 #include <cmath> 
 #include <filesystem> 
+#include "tools/cpp/runfiles/runfiles.h" // <--- DODANY INCLUDE
 
 #include "lib/Matrix.h"
 #include "lib/KalmanFilterR7.h"
 #include "lib/ApogeeDetector.h"
 #include "lib/DataLoader.h"
+
+using bazel::tools::cpp::runfiles::Runfiles; // <--- DODANA PRZESTRZEŃ NAZW
+namespace fs = std::filesystem; 
+
 namespace {
     static constexpr auto apoogeeError=0.15;
 }
-namespace fs = std::filesystem; 
+
+// Funkcja pomocnicza do pobierania bezpiecznej ścieżki
+fs::path GetRunfilesPath(Runfiles* runfiles, const std::string& relative_path) {
+    // Bzlmod domyślnie nazywa główne repozytorium "_main" lub tak jak w MODULE.bazel ("bazel_apogeum")
+    std::string runfiles_path = "bazel_apogeum/" + relative_path; 
+    fs::path resolved_path = runfiles->Rlocation(runfiles_path);
+
+    // Fallback dla nowszych wersji Bazela, które mogą używać nazwy "_main"
+    if (!fs::exists(resolved_path)) {
+        runfiles_path = "_main/" + relative_path;
+        resolved_path = runfiles->Rlocation(runfiles_path);
+    }
+    return resolved_path;
+}
 
 TEST(detect_test, test_apogee_detecotr) {
-    fs::path base_path = "data/10hz_1000m"; 
+    // Inicjalizacja Runfiles
+    std::string error;
+    std::unique_ptr<Runfiles> runfiles(Runfiles::CreateForTest(&error));
+    ASSERT_NE(runfiles, nullptr) << "Nie udalo sie zainicjowac runfiles: " << error;
+
+    fs::path base_path = GetRunfilesPath(runfiles.get(), "data/10hz_1000m"); 
     
     fs::path barometerPath = base_path / "exported_barometer_data.csv";
     fs::path accelerometerPath = base_path / "exported_accel_data.csv";
     fs::path configPath = base_path / "config.txt";
+
     checkAndGenerateConfig(configPath);
     ConfigData config = readConfig(configPath);
     const double dt = config.hz > 0 ? 1.0 / config.hz : 0.1;
@@ -45,12 +69,21 @@ TEST(detect_test, test_apogee_detecotr) {
     }
     EXPECT_NEAR(config.max_height_clean, height, 1.0); 
 }
+
 class ApogeeFlightDataTest : public ::testing::TestWithParam<std::string>{};
+
 TEST_P(ApogeeFlightDataTest, CalculatesApogeeCorrectly){
-    fs::path base_path = GetParam();
+    // Inicjalizacja Runfiles
+    std::string error;
+    std::unique_ptr<Runfiles> runfiles(Runfiles::CreateForTest(&error));
+    ASSERT_NE(runfiles, nullptr) << "Nie udalo sie zainicjowac runfiles: " << error;
+
+    fs::path base_path = GetRunfilesPath(runfiles.get(), GetParam());
+
     fs::path barometerPath = base_path / "exported_barometer_data.csv";
     fs::path accelerometerPath = base_path / "exported_accel_data.csv";
     fs::path configPath = base_path / "config.txt";
+
     checkAndGenerateConfig(configPath);
     ConfigData config = readConfig(configPath);
     const double dt = config.hz > 0 ? 1.0 / config.hz : 0.1;
@@ -74,7 +107,6 @@ TEST_P(ApogeeFlightDataTest, CalculatesApogeeCorrectly){
         }
     }
     EXPECT_NEAR(config.max_height_clean, height, config.max_height_clean*apoogeeError); 
-
 }
 
 INSTANTIATE_TEST_SUITE_P(
