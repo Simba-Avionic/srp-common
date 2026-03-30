@@ -5,14 +5,17 @@ cc_library(
     srcs = [
         "KalmanFilter.cpp",
         "KalmanFilterR7.cpp",
+        "Matrix.cpp",
+        "DataLoader.cpp"
     ],
     hdrs = [
         "KalmanFilter.h",
         "KalmanFilterR7.h",
         "ApogeeDetector.h",
+        "Matrix.h",
+        "DataLoader.h"
     ],
     deps = [
-        "@eigen//:eigen",
         "//csvReader:csvReader",
     ],
     visibility = ["//visibility:public"],

@@ -1,15 +1,37 @@
-load("@rules_cc//cc:defs.bzl", "cc_binary")
+load("@rules_cc//cc:defs.bzl", "cc_test")
 
-cc_binary(
+cc_test(
     name = "main",
     srcs = ["main.cpp"],
     deps = ["//lib:apogee_lib"],
     data = ["//data:data_files"],
 )
 
-cc_binary(
+cc_test(
     name = "csv_apogee_test",
     srcs = ["apogee.cpp"],
     deps = ["//lib:apogee_lib"],
+    data = ["//data:data_files"],
+)
+
+cc_test(
+    name = "testy",
+    srcs = ["testy.cpp"],
+    data = [
+        ":csv_apogee_test",  
+    ],
+)
+
+cc_test(
+    name = "test-cc",
+    srcs = [
+        "apogee_detector_test.cc"
+    ],
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_googletest//:gtest_main",
+        "//lib:apogee_lib",
+    ],
+    
     data = ["//data:data_files"],
 )
